@@ -62,6 +62,13 @@ export class StreamViewGM extends StreamView {
 			precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
 		});
 
+		game.keybindings.register('stream-view', 'chat-mode-toggle', {
+			name: game.i18n.localize('stream-view.controls.toggle-chat-mode'),
+			onDown: () => this.toggleChatMode(),
+			restricted: true,
+			precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL,
+		});
+
 		game.keybindings.register('stream-view', 'toggle-notes-layer', {
 			name: game.i18n.localize('CONTROLS.NoteToggle'),
 			onDown: () => this.#sendNotesStatus(!this.#notesStatus),
@@ -135,6 +142,12 @@ export class StreamViewGM extends StreamView {
 					icon: 'far fa-window-restore',
 					onClick: () => this.closePopouts(),
 				},
+				{
+					name: 'chat-mode',
+					title: 'stream-view.controls.toggle-chat-mode',
+					icon: 'fas fa-comments',					
+					onClick: () => this.toggleChatMode(),
+				},
 			],
 		};
 		if (!game.settings.get('stream-view', 'disable-manually-tracked-tokens')) {
@@ -176,6 +189,7 @@ export class StreamViewGM extends StreamView {
 		this._socket.register('closePopouts', () => {});
 		this._socket.register('toggleNotes', (toggled) => {});
 		this._socket.register('getNotesStatus', () => {});
+		this._socket.register('setChatMode', (mode) => {});		
 
 		// GM
 		this._socket.register('streamConnected', (userId) => this.#streamConnected(userId));
@@ -328,6 +342,30 @@ export class StreamViewGM extends StreamView {
 	}
 
 	/**
+	 * @param {string} mode
+	 */
+	async #sendSetChatMode(mode) {
+		if (!this._socket) {
+			return;
+		}
+
+		try {
+			await this._socket.executeAsUser(
+				'setChatMode',
+				game.settings.get('stream-view', 'user-id'),
+				mode,
+			);
+		} catch {
+			ui.notifications.warn(`Stream View chat visibility cannot be updated (user not connected?)`);
+			return;
+		}
+
+		ui.notifications.info(
+			`Stream View chat visibility is now ${StreamViewOptions.localizeChatVisibility(this.chatMode)}`,
+		);
+	}
+
+	/**
 	 * @param {boolean} active
 	 */
 	async #sendNotesStatus(active) {
@@ -446,6 +484,24 @@ export class StreamViewGM extends StreamView {
 		await this.setCameraMode(targetMode);
 	}
 
+	async toggleChatMode() {
+		if (!this._socket) {
+			return;
+		}
+
+		switch(thius.chatMode) {
+			case StreamViewOptions.ChatVisibility.ALWAYS:
+				await this.setChatMode(StreamViewOptions.ChatVisibility.ENCOUNTER);
+				break;
+			case StreamViewOptions.ChatVisibility.ENCOUNTER:
+				await this.setChatMode(StreamViewOptions.ChatVisibility.NEVER);
+				break;
+			case StreamViewOptions.ChatVisibility.NEVER:
+				await this.setChatMode(StreamViewOptions.ChatVisibility.ALWAYS);
+				break;
+		}
+	}
+
 	async toggleNotes() {
 		await this.#sendNotesStatus(!this.#notesStatus);
 	}
@@ -475,6 +531,15 @@ export class StreamViewGM extends StreamView {
 		super.setCameraMode(mode);
 
 		await this.#sendSetCameraMode(mode);
+	}
+
+	/**
+	 * @override
+	 */
+	async setChatMode(mode) {
+		super.setChatMode(mode);
+
+		await this.#sendSetChatMode(mode);
 	}
 
 	async closePopouts() {
