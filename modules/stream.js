@@ -374,9 +374,9 @@ export class StreamViewStream extends StreamView {
 			html.find('#chat-log').css('height', '100%');
 			this.#hidePopoutHeaders(html);
 			return;
-		} else if (app instanceof CombatTracker) {
-			this.#hidePopoutHeaders(html);
-			return;
+		//} else if (app instanceof CombatTracker) {
+		//	this.#hidePopoutHeaders(html);
+		//	return;
 		} else if (app instanceof UserConfig) {
 			// Auto-close UserConfig immediately (we don't use it as the stream user).
 			setTimeout(() => app.close(), 0);
