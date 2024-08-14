@@ -311,7 +311,7 @@ export class StreamViewStream extends StreamView {
 	 * @param {JQuery<HTMLElement>} html
 	 * @private
 	 */
-	#handleRenderCameraViews() {
+	#handleRenderCameraViews(html) {
 		if (!game.settings.get('stream-view', 'show-voice-video')) {
 			this.#hideHtml(html);
 			return;
@@ -325,6 +325,7 @@ export class StreamViewStream extends StreamView {
 		} else {
 			html.css('width', pixels);
 		}
+		html.find(".control-bar").css("display", "none")
 	}
 
 	/**
@@ -373,9 +374,9 @@ export class StreamViewStream extends StreamView {
 			html.find('#chat-log').css('height', '100%');
 			this.#hidePopoutHeaders(html);
 			return;
-		} else if (app instanceof CombatTracker) {
-			this.#hidePopoutHeaders(html);
-			return;
+		//} else if (app instanceof CombatTracker) {
+		//	this.#hidePopoutHeaders(html);
+		//	return;
 		} else if (app instanceof UserConfig) {
 			// Auto-close UserConfig immediately (we don't use it as the stream user).
 			setTimeout(() => app.close(), 0);
@@ -573,6 +574,7 @@ export class StreamViewStream extends StreamView {
 		} else {
 			token.release();
 		}
+		// jQuery('#visual-active-effects').css('display', 'none');
 	}
 
 	/**
